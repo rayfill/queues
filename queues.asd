@@ -1,21 +1,25 @@
 #|
-  This file is a part of blocking-queue project.
+  This file is a part of queues project.
 |#
 
 (in-package :cl-user)
-(defpackage blocking-queue-asd
+(defpackage queues-asd
   (:use :cl :asdf))
-(in-package :blocking-queue-asd)
+(in-package :queues-asd)
 
-(defsystem blocking-queue
+(defsystem queues
   :version "0.1"
   :author ""
   :license ""
-  :depends-on (:cons-pool :kmrcl)
+  :depends-on (:cons-pool :kmrcl :bordeaux-threads)
   :components ((:module "src"
-                :components
-                ((:file "blocking-queue")
-		 (:file "linked-list-queue"))))
+			:components
+			(
+			 (:file "queues")
+			 (:file "allocator")
+			 (:file "allocator-impl")
+			 (:file "lock-free-queue")
+			 (:file "blocking-queue"))))
   :description ""
   :long-description
   #.(with-open-file (stream (merge-pathnames
@@ -29,4 +33,4 @@
                                :fill-pointer t)))
           (setf (fill-pointer seq) (read-sequence seq stream))
           seq)))
-  :in-order-to ((test-op (load-op blocking-queue-test))))
+  :in-order-to ((test-op (load-op queues-test))))

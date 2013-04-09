@@ -1,19 +1,19 @@
 #|
-  This file is a part of blocking-queue project.
+  This file is a part of queues project.
 |#
 
 (in-package :cl-user)
-(defpackage blocking-queue-test-asd
+(defpackage queues-test-asd
   (:use :cl :asdf))
-(in-package :blocking-queue-test-asd)
+(in-package :queues-test-asd)
 
-(defsystem blocking-queue-test
+(defsystem queues-test
   :author ""
   :license ""
-  :depends-on (:blocking-queue
+  :depends-on (:queues
                :cl-test-more
 	       :workers)
   :components ((:module "t"
                 :components
-                ((:file "blocking-queue"))))
+                ((:file "queues"))))
   :perform (load-op :after (op c) (asdf:clear-system c)))
