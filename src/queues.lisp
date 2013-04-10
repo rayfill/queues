@@ -13,3 +13,7 @@
 ;; blocking methods.
 (defgeneric put (queue value))
 (defgeneric take (queue))
+
+(defclass abstract-queue ()
+  ((head :accessor head :type list)
+   (tail :accessor tail :type list)))

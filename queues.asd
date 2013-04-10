@@ -11,11 +11,10 @@
   :version "0.1"
   :author ""
   :license ""
-  :depends-on (:cons-pool :kmrcl :bordeaux-threads)
+  :depends-on (:cons-pool :kmrcl)
   :components ((:module "src"
 			:components
-			(
-			 (:file "queues")
+			((:file "queues")
 			 (:file "allocator")
 			 (:file "allocator-impl")
 			 (:file "lock-free-queue")

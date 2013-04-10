@@ -1,19 +1,19 @@
 (in-package :cl-user)
 (defpackage :lock-free-queue
-  (:use :cl :queues :allocator)
+  (:use :cl)
   (:import-from :sb-ext :atomic-update :compare-and-swap)
-  (:import-from :queues :offer :poll :peek)
+  (:import-from :queues :offer :poll :peek :put :take
+		:abstract-queue :head :tail)
   (:import-from :kmrcl :aif :it :awhen)
   (:import-from :allocator-impl :unlimited-allocator :limited-allocator)
+  (:import-from :allocator :allocate :deallocate)
   (:export :lock-free-queue)
   (:nicknames :lfq))
 (in-package :lock-free-queue)
 
-(defclass lock-free-queue ()
-  ((allocator :accessor allocator)
-   (head :initform nil :initarg :head :accessor head :type list)
-   (tail :initform nil :initarg :tail :accessor tail :type list)))
-
+(defclass lock-free-queue (abstract-queue)
+  ((allocator :accessor allocator)))
+   
 (defmethod initialize-instance :after ((instance lock-free-queue)
 				       &key capacity)
   (with-slots (allocator head tail)
@@ -76,9 +76,27 @@
     (loop until (tail-advance queue)))
   (values value t))
 
+(defmethod put ((queue lock-free-queue) value)
+  (tagbody
+   :retry
+     (multiple-value-bind (value is-succeed)
+	 (offer queue value)
+       (declare (ignorable value))
+       (unless is-succeed
+	 (go :retry)))))
+
 (defmethod poll ((queue lock-free-queue))
   (loop until (tail-advance queue))
   (head-advance queue))
+
+(defmethod take ((queue lock-free-queue))
+  (tagbody
+   :retry
+     (multiple-value-bind (value is-succeed)
+	 (poll queue)
+    (unless is-succeed
+      (go :retry))
+    value)))
 
 (defmethod peek ((queue lock-free-queue))
   (loop until (tail-advance queue))
@@ -86,3 +104,5 @@
     (if head-cell
 	(values (car head-cell) t)
 	(values nil nil))))
+
+

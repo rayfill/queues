@@ -17,6 +17,11 @@
   ((current :accessor current :initform 0 :type integer)
    (limit :accessor limit :initarg :limit :type integer)))
 
+(defmethod print-object ((allocator limited-allocator) stream)
+  (with-slots (current limit)
+      allocator
+    (format stream "#<limited-allocator current: ~A, limit: ~A>" current limit)))
+
 (defun type-check (type &rest values)
   (dolist (value values)
     (unless (typep value type)
@@ -42,7 +47,7 @@
 	   (unless (eq old (sb-ext:cas (slot-value allocator 'current) old new))
 	     (go :retry))
 	   (when (<= new limit)
-	     (cons nil nil)))))))
+	     (return-from allocate (cons nil nil))))))))
 
 (defmethod deallocate ((allocator limited-allocator) cell)
   (declare (ignore cell))
