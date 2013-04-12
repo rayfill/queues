@@ -8,7 +8,7 @@
 		:allocation-failed-error)
   (:import-from :sb-thread :make-mutex :with-mutex
 		:make-waitqueue :condition-wait
-		:condition-notify :condition-broadcast)
+		:condition-notify)
   (:export :blocking-queue))
 (in-package :blocking-queue)
 
@@ -59,25 +59,26 @@
   
   (with-slots (allocator tail
 			 tail-mutex tail-condv
-			 head-condv)
+			 head-mutex head-condv)
       queue
     (with-mutex (tail-mutex)
       (loop
 	 for cell = (ignore-errors (allocate allocator))
 	 if cell
 	 return (progn
-		    (setf (car cell) value
-			  (cdr cell) nil)
-		    (update-tail queue cell))
+		  (setf (car cell) value
+			(cdr cell) nil)
+		  (update-tail queue cell))
 	 else
 	 do (condition-wait tail-condv tail-mutex)
 	 end))
-    (condition-broadcast head-condv)))
+    (with-mutex (head-mutex)
+      (condition-notify head-condv))))
 	
 (defmethod take ((queue blocking-queue))
   (with-slots (allocator head
 			 head-mutex head-condv
-			 tail-condv)
+			 tail-mutex tail-condv)
       queue
     (values
      (prog1
@@ -92,7 +93,8 @@
 	      else
 	      do (condition-wait head-condv head-mutex)
 	      end))
-       (condition-notify tail-condv)) t)))
+       (with-mutex (tail-mutex)
+	 (condition-notify tail-condv)) t))))
 
 (defmethod peek ((queue blocking-queue))
   (with-slots (write-mutex head)
