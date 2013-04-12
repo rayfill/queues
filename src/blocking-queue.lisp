@@ -116,7 +116,7 @@
 	    (update-tail queue cell)
 	    (condition-notify head-condv)
 	    (return-from offer t))))
-    (allocation-failed-error () (values nil nil))))
+    (allocation-failed-error () (return-from offer (values nil nil)))))
 
 (defmethod poll ((queue blocking-queue))
   (with-slots (allocator head-mutex head-condv head tail-condv)
