@@ -2,7 +2,7 @@
 (defpackage :queues
   (:use :cl)
   (:nicknames :q)
-  (:export :offer :poll :peek :put :take))
+  (:export :offer :poll :peek :put :take :create-queue))
 (in-package :queues)
 
 ;; non-blocking methods.
@@ -17,3 +17,7 @@
 (defclass abstract-queue ()
   ((head :accessor head :type list)
    (tail :accessor tail :type list)))
+
+(defgeneric create-queue (class &key capacity))
+(defmethod create-queue (class &key (capacity 0 supplied-p))
+  (apply #'make-instance class (when supplied-p `(:capacity ,capacity))))

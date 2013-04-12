@@ -2,13 +2,13 @@
 (defpackage :blocking-queue
   (:use :cl)
   (:import-from :queues :peek :poll :offer :take :put
-		:abstract-queue :head :tail)
+		:abstract-queue :head :tail :create-queue)
   (:import-from :allocator :allocator :allocate :deallocate)
-  (:import-from :allocator-impl :unlimited-allocator :limited-allocator)
+  (:import-from :allocator-impl :unlimited-allocator :limited-allocator
+		:allocation-failed-error)
   (:import-from :sb-thread :make-mutex :with-mutex
 		:make-waitqueue :condition-wait
-		:condition-notify :condition-broadcast
-		:with-mutex)
+		:condition-notify :condition-broadcast)
   (:export :blocking-queue))
 (in-package :blocking-queue)
 
@@ -56,13 +56,14 @@
     (setf head new-head)))
 
 (defmethod put ((queue blocking-queue) value)
+  
   (with-slots (allocator tail
 			 tail-mutex tail-condv
 			 head-condv)
       queue
     (with-mutex (tail-mutex)
       (loop
-	 for cell = (allocate allocator)
+	 for cell = (ignore-errors (allocate allocator))
 	 if cell
 	 return (progn
 		    (setf (car cell) value
@@ -103,17 +104,17 @@
 	    (values nil nil))))))
 
 (defmethod offer ((queue blocking-queue) value)
-  (with-slots (allocator head-condv tail-mutex tail-condv tail)
-      queue
-      (let ((cell (allocate allocator)))
-	(unless cell
-	  (return-from offer nil))
-	(with-mutex (tail-mutex)
-	  (setf (car cell) value
-		(cdr cell) nil)
-	  (update-tail queue cell)
-	  (condition-notify head-condv)
-	  (return-from offer t)))))
+  (handler-case
+      (with-slots (allocator head-condv tail-mutex tail-condv tail)
+	  queue
+	(let ((cell (allocate allocator)))
+	  (with-mutex (tail-mutex)
+	    (setf (car cell) value
+		  (cdr cell) nil)
+	    (update-tail queue cell)
+	    (condition-notify head-condv)
+	    (return-from offer t))))
+    (allocation-failed-error () (values nil nil))))
 
 (defmethod poll ((queue blocking-queue))
   (with-slots (allocator head-mutex head-condv head tail-condv)
@@ -128,3 +129,8 @@
 			       (deallocate allocator cell)
 			       (condition-notify tail-condv)) t)))
 	(return-from poll (values nil nil))))))
+
+(in-package :queues)
+(import 'blocking-queue:blocking-queue)
+(export 'blocking-queue)
+  

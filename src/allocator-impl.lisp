@@ -1,8 +1,11 @@
 (in-package :cl-user)
 (defpackage :allocator-impl
   (:use :cl :allocator)
-  (:export :unlimited-allocator :limited-allocator))
+  (:export :unlimited-allocator :limited-allocator :allocation-failed-error))
 (in-package :allocator-impl)
+
+(define-condition allocation-failed-error (storage-condition)
+  ())
 
 (defclass unlimited-allocator (allocator)
   ())
@@ -46,8 +49,9 @@
 	 (let ((new (1+ old)))
 	   (unless (eq old (sb-ext:cas (slot-value allocator 'current) old new))
 	     (go :retry))
-	   (when (<= new limit)
-	     (return-from allocate (cons nil nil))))))))
+	   (if (<= new limit)
+	       (return-from allocate (cons nil nil))
+	       (error 'allocation-failed-error)))))))
 
 (defmethod deallocate ((allocator limited-allocator) cell)
   (declare (ignore cell))

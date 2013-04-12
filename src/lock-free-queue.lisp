@@ -5,7 +5,8 @@
   (:import-from :queues :offer :poll :peek :put :take
 		:abstract-queue :head :tail)
   (:import-from :kmrcl :aif :it :awhen)
-  (:import-from :allocator-impl :unlimited-allocator :limited-allocator)
+  (:import-from :allocator-impl :unlimited-allocator :limited-allocator
+		:allocation-failed-error)
   (:import-from :allocator :allocate :deallocate)
   (:export :lock-free-queue)
   (:nicknames :lfq))
@@ -59,22 +60,22 @@
 	    (values result t))))))
 
 (defmethod offer ((queue lock-free-queue) value)
-  (let ((cell (allocate (allocator queue))))
-    (unless cell
-      (return-from offer (values value nil)))
-    (setf (car cell) value
-	  (cdr cell) nil)
-    (tagbody
-     :retry
-       (loop until (tail-advance queue))
-       (unless (eq (atomic-update (cdr (slot-value queue 'tail))
-				  (lambda (cdr-slot)
-				    (if cdr-slot
-					cdr-slot
-					cell))) cell)
-	 (go :retry)))
-    (loop until (tail-advance queue)))
-  (values value t))
+  (handler-case
+      (let ((cell (allocate (allocator queue))))
+	(setf (car cell) value
+	      (cdr cell) nil)
+	(tagbody
+	 :retry
+	   (loop until (tail-advance queue))
+	   (unless (eq (atomic-update (cdr (slot-value queue 'tail))
+				      (lambda (cdr-slot)
+					(if cdr-slot
+					    cdr-slot
+					    cell))) cell)
+	     (go :retry)))
+	(loop until (tail-advance queue))
+	(values value t))
+    (allocation-failed-error () (values nil nil))))
 
 (defmethod put ((queue lock-free-queue) value)
   (tagbody
@@ -105,4 +106,6 @@
 	(values (car head-cell) t)
 	(values nil nil))))
 
-
+(in-package :queues)
+(import 'lock-free-queue:lock-free-queue)
+(export 'lock-free-queue)
