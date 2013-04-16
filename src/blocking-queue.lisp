@@ -130,5 +130,3 @@
 			       (deallocate allocator cell)
 			       (condition-notify tail-condv)) t)))
 	(return-from poll (values nil nil))))))
-
-  

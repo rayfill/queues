@@ -105,4 +105,3 @@
     (if head-cell
 	(values (car head-cell) t)
 	(values nil nil))))
-

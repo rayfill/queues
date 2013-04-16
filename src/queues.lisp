@@ -1,8 +1,7 @@
 (in-package :cl-user)
 (defpackage :queues
   (:use :cl)
-  (:export :offer :poll :peek :put :take :create-queue
-	   :lock-free-queue :blocking-queue))
+  (:export :offer :poll :peek :put :take :create-queue))
 (in-package :queues)
 
 ;; non-blocking methods.
