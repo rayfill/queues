@@ -18,7 +18,8 @@
 			 (:file "allocator")
 			 (:file "allocator-impl")
 			 (:file "lock-free-queue")
-			 (:file "blocking-queue"))))
+			 (:file "blocking-queue")
+			 (:file "import-symbols"))))
   :description ""
   :long-description
   #.(with-open-file (stream (merge-pathnames

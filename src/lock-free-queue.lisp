@@ -8,8 +8,8 @@
   (:import-from :allocator-impl :unlimited-allocator :limited-allocator
 		:allocation-failed-error)
   (:import-from :allocator :allocate :deallocate)
-  (:export :lock-free-queue)
-  (:nicknames :lfq))
+  (:export :lock-free-queue))
+
 (in-package :lock-free-queue)
 
 (defclass lock-free-queue (abstract-queue)
@@ -106,6 +106,3 @@
 	(values (car head-cell) t)
 	(values nil nil))))
 
-(in-package :queues)
-(import 'lock-free-queue:lock-free-queue)
-(export 'lock-free-queue)

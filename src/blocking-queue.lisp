@@ -80,21 +80,20 @@
 			 head-mutex head-condv
 			 tail-mutex tail-condv)
       queue
-    (values
-     (prog1
-	 (with-mutex (head-mutex)
-	   (loop
-	      for cell = (cdr head)
-	      if cell
-	      return (prog1
-			 (car cell)
-		       (update-head queue cell)
-		       (deallocate allocator cell))
-	      else
-	      do (condition-wait head-condv head-mutex)
-	      end))
-       (with-mutex (tail-mutex)
-	 (condition-notify tail-condv)) t))))
+    (prog1
+	(with-mutex (head-mutex)
+	  (loop
+	     for cell = (cdr head)
+	     if cell
+	     return (prog1
+			(car cell)
+		      (update-head queue cell)
+		      (deallocate allocator cell))
+	     else
+	     do (condition-wait head-condv head-mutex)
+	     end))
+      (with-mutex (tail-mutex)
+	(condition-notify tail-condv)) t)))
 
 (defmethod peek ((queue blocking-queue))
   (with-slots (write-mutex head)
@@ -132,7 +131,4 @@
 			       (condition-notify tail-condv)) t)))
 	(return-from poll (values nil nil))))))
 
-(in-package :queues)
-(import 'blocking-queue:blocking-queue)
-(export 'blocking-queue)
   

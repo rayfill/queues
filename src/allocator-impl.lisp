@@ -4,7 +4,7 @@
   (:export :unlimited-allocator :limited-allocator :allocation-failed-error))
 (in-package :allocator-impl)
 
-(define-condition allocation-failed-error (storage-condition)
+(define-condition allocation-failed-error (simple-error)
   ())
 
 (defclass unlimited-allocator (allocator)
